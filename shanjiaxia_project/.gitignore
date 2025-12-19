@@ -1,0 +1,114 @@
+# 山脚下项目 v2.0 - Git忽略文件
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 数据文件
+data/raw/*.csv
+data/processed/*.csv
+data/backup/*.csv
+data/features/*.csv
+data/candidates/*.csv
+data/contrast_group/*.csv
+data/analysis/*.json
+
+# 但保留目录结构
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/backup/.gitkeep
+!data/features/.gitkeep
+!data/candidates/.gitkeep
+!data/contrast_group/.gitkeep
+!data/analysis/.gitkeep
+
+# 模型文件
+models/*.pkl
+models/*.h5
+models/*.pt
+models/*.pth
+!models/.gitkeep
+
+# 日志文件
+logs/*.log
+!logs/.gitkeep
+
+# 报告文件 (保留样例，忽略实际生成的)
+reports/daily/*.md
+reports/weekly/*.md
+reports/monthly/*.csv
+!reports/daily/.gitkeep
+!reports/weekly/.gitkeep
+!reports/monthly/.gitkeep
+!reports/daily/README.md
+!reports/weekly/README.md
+!reports/monthly/README.md
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+.cache/
+
+# 敏感信息
+config/config_local.json
+.env
+.env.local
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 备份
+backup_*/
+*.zip
+*.tar.gz
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Linux
+*~

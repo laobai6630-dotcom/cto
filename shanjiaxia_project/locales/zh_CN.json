@@ -1,0 +1,21 @@
+{
+  "dashboard": {
+    "title": "山脚下项目监控面板",
+    "candidates": "候选股票",
+    "contrast_group": "对照组",
+    "performance": "表现追踪",
+    "settings": "参数设置"
+  },
+  "buttons": {
+    "login": "登录",
+    "logout": "登出",
+    "save": "保存",
+    "cancel": "取消",
+    "refresh": "刷新"
+  },
+  "messages": {
+    "success": "操作成功",
+    "error": "操作失败",
+    "loading": "加载中..."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "filtering": {
+    "thresholds": [0.5, 0.4, 0.3],
+    "min_candidates": 5,
+    "max_candidates": 20
+  },
+  "tracking": {
+    "tracking_days": 30,
+    "success_threshold": 0.5
+  },
+  "contrast_group": {
+    "period_days": 30,
+    "top_n": 20
+  }
+}
