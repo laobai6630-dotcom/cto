@@ -80,3 +80,19 @@ Thumbs.db
 *.tmp
 tmp/
 temp/
+# 本地数据采集程序和数据文件（保持在cto根目录）
+财务和基本面数据获取.py
+日线和分钟线数据获取.py
+月线数据获取.py
+周线数据获取.py
+
+daily_minute_data/
+financial_data/
+monthly_data/
+weekly_data/
+
+# 其他临时文件
+backup_*/
+shanjiaxia_project/
+*.pyc
+__pycache__/
