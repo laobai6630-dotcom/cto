@@ -1,0 +1,12 @@
+{
+  "similarity_weights": {
+    "ml_model": 0.6,
+    "chip_distribution": 0.2,
+    "news_sentiment": 0.2
+  },
+  "model_ensemble_weights": {
+    "lr": 0.4,
+    "rf": 0.3,
+    "gb": 0.3
+  }
+}

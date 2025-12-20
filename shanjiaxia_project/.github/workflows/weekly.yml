@@ -1,0 +1,24 @@
+name: Weekly Report
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # 每周一16:00 (UTC+8)
+  workflow_dispatch:
+
+jobs:
+  weekly-report:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run weekly report
+        run: |
+          python scripts/tracking/generate_weekly_report.py
+      
+      - name: Commit results
+        run: |
+          git add reports/weekly/
+          git commit -m "Weekly report" || true
+          git push || true

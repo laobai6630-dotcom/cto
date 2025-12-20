@@ -1,0 +1,24 @@
+name: Monthly Report
+
+on:
+  schedule:
+    - cron: '0 8 1 * *'  # 每月1日16:00 (UTC+8)
+  workflow_dispatch:
+
+jobs:
+  monthly-report:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run monthly report
+        run: |
+          python scripts/tracking/generate_monthly_report.py
+      
+      - name: Commit results
+        run: |
+          git add reports/monthly/
+          git commit -m "Monthly report" || true
+          git push || true
