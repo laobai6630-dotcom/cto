@@ -110,5 +110,9 @@ backup_*/
 Thumbs.db
 Desktop.ini
 
+# Task manager local state
+task_manager_data.json
+task_manager_config.json
+
 # Linux
 *~
