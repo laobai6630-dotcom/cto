@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-检查本地cto文件夹与GitHub仓库是否同步的工具
+检查本地cto文件夹与GitHub仓库是否同步的工具（修复版 - Windows编码问题）
 
 使用方式：
     python check_sync.py
@@ -88,11 +88,14 @@ class SyncChecker:
         
         try:
             # 使用 git ls-files 获取仓库中的所有文件
+            # 修复：指定 encoding='utf-8'，使用 errors='ignore' 来处理编码问题
             result = subprocess.run(
                 ["git", "ls-files"],
                 cwd=str(self.local_root),
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='ignore',
                 check=True
             )
             
@@ -145,6 +148,8 @@ class SyncChecker:
                         cwd=str(self.local_root),
                         capture_output=True,
                         text=True,
+                        encoding='utf-8',
+                        errors='ignore',
                         check=True
                     )
                     github_hash = result.stdout.strip()
@@ -188,7 +193,8 @@ class SyncChecker:
             # 同步率
             if self.report['total_files'] > 0:
                 sync_rate = (self.report['synced_files'] / self.report['total_files']) * 100
-                f.write(f"**同步率**: {sync_rate:.2f}%\n\n")
+                status = "✅" if sync_rate == 100 else "⚠️" if sync_rate >= 90 else "❌"
+                f.write(f"**同步率**: {status} {sync_rate:.2f}%\n\n")
             
             # 本地独有文件（未上传到 GitHub）
             if self.report['missing_github']:
