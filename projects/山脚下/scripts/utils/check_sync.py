@@ -1,43 +1,39 @@
+✅ 好的，给你一个只检查 projects/山脚下 的脚本：
+
+把这个脚本保存为 D:\cto\check_project_sync.py：
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
-检查本地cto文件夹与GitHub仓库是否同步的工具（修复版 - Windows编码问题）
-
-使用方式：
-    python check_sync.py
-
-输出：
-    生成 sync_report.md 报告文件
+只检查 projects/山脚下 目录与 GitHub 是否同步
 """
 
 import os
 import hashlib
-import json
 from pathlib import Path
 from datetime import datetime
 import subprocess
 import sys
 
-class SyncChecker:
-    """本地和GitHub文件同步检查器"""
+class ProjectSyncChecker:
+    """只检查项目目录的同步检查器"""
     
     def __init__(self):
         self.local_root = Path("D:/cto").resolve()
-        self.project_root = self.local_root / "projects" / "山脚下"
+        self.project_dir = self.local_root / "projects" / "山脚下"
         self.report = {
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "local_root": str(self.local_root),
+            "project_path": str(self.project_dir),
             "total_files": 0,
             "synced_files": 0,
-            "missing_local": [],
             "missing_github": [],
             "content_diff": [],
-            "ignored_patterns": [".git", ".gitkeep", "__pycache__", ".pyc", ".log"],
+            "ignored_patterns": [".git", ".gitkeep", "__pycache__", ".pyc", ".log", "sync_report"],
         }
-        self.github_files = {}
         self.local_files = {}
-        
+        self.github_files = {}
+    
     def should_ignore(self, path):
         """判断是否应该忽略该文件"""
         path_str = str(path).lower()
@@ -57,40 +53,38 @@ class SyncChecker:
             return f"ERROR: {str(e)}"
     
     def scan_local_files(self):
-        """扫描本地文件"""
-        print("📂 扫描本地文件...")
+        """扫描本地项目目录的文件"""
+        print(f"📂 扫描本地文件: {self.project_dir}")
         
-        for root, dirs, files in os.walk(self.local_root):
-            # 移除要忽略的目录
+        for root, dirs, files in os.walk(self.project_dir):
             dirs[:] = [d for d in dirs if not self.should_ignore(d)]
             
             for file in files:
                 if self.should_ignore(file):
                     continue
-                    
+                
                 file_path = Path(root) / file
-                # 相对于 cto 的路径
-                rel_path = file_path.relative_to(self.local_root)
+                # 相对于项目目录的路径
+                rel_path = str(file_path.relative_to(self.project_dir)).replace("\\", "/")
                 file_hash = self.get_file_hash(file_path)
                 
-                self.local_files[str(rel_path)] = {
+                self.local_files[rel_path] = {
                     "path": str(file_path),
                     "hash": file_hash,
                     "size": file_path.stat().st_size if file_path.exists() else 0,
                 }
                 self.report["total_files"] += 1
         
-        print(f"✅ 本地文件扫描完成：{self.report['total_files']} 个文件")
+        print(f"✅ 本地文件扫描完成：{self.report['total_files']} 个文件\n")
     
     def get_github_files(self):
-        """从 git 获取 GitHub 上的文件列表"""
+        """从 git 获取 GitHub 上项目目录的文件"""
         print("🔗 获取 GitHub 文件列表...")
         
         try:
-            # 使用 git ls-files 获取仓库中的所有文件
-            # 修复：指定 encoding='utf-8'，使用 errors='ignore' 来处理编码问题
+            # 获取 projects/山脚下 目录下的所有文件
             result = subprocess.run(
-                ["git", "ls-files"],
+                ["git", "ls-files", "projects/山脚下"],
                 cwd=str(self.local_root),
                 capture_output=True,
                 text=True,
@@ -101,50 +95,43 @@ class SyncChecker:
             
             for file_path in result.stdout.strip().split('\n'):
                 if file_path and not self.should_ignore(file_path):
-                    self.github_files[file_path] = {
-                        "path": file_path,
-                        "in_repo": True,
-                    }
+                    # 只取 projects/山脚下 之后的相对路径
+                    if file_path.startswith("projects/"):
+                        rel_path = file_path.replace("projects/山脚下/", "")
+                        if rel_path:  # 确保不是空字符串
+                            self.github_files[rel_path] = {
+                                "path": file_path,
+                                "in_repo": True,
+                            }
             
-            print(f"✅ GitHub 文件列表获取完成：{len(self.github_files)} 个文件")
+            print(f"✅ GitHub 文件列表获取完成：{len(self.github_files)} 个文件\n")
             
         except Exception as e:
             print(f"❌ 获取 GitHub 文件列表失败: {e}")
-            print("   请确保安装了 Git 并且 D:\\cto 是 Git 仓库")
             return False
         
         return True
     
     def compare_files(self):
         """比对本地和 GitHub 的文件"""
-        print("🔍 比对文件...")
-        
-        # 转换 Windows 路径为 Unix 路径以便比对
-        local_files_normalized = {
-            k.replace("\\", "/"): v 
-            for k, v in self.local_files.items()
-        }
+        print("🔍 比对文件...\n")
         
         # 检查本地有但 GitHub 没有的文件
-        for local_path in local_files_normalized:
+        for local_path in self.local_files:
             if local_path not in self.github_files:
                 self.report["missing_github"].append(local_path)
         
-        # 检查 GitHub 有但本地没有的文件
-        for github_path in self.github_files:
-            if github_path not in local_files_normalized:
-                self.report["missing_local"].append(github_path)
-        
         # 检查内容是否相同
         for github_path in self.github_files:
-            if github_path in local_files_normalized:
-                local_file = Path(self.local_root) / github_path
+            if github_path in self.local_files:
+                local_file = self.project_dir / github_path
                 local_hash = self.get_file_hash(local_file)
                 
                 # 获取 GitHub 版本的哈希
                 try:
+                    full_github_path = f"projects/山脚下/{github_path}"
                     result = subprocess.run(
-                        ["git", "hash-object", github_path],
+                        ["git", "hash-object", full_github_path],
                         cwd=str(self.local_root),
                         capture_output=True,
                         text=True,
@@ -159,26 +146,24 @@ class SyncChecker:
                             "file": github_path,
                             "local_hash": local_hash,
                             "github_hash": github_hash,
-                            "status": "内容不同"
                         })
                     else:
                         self.report["synced_files"] += 1
                         
                 except Exception as e:
-                    print(f"⚠️  无法比对 {github_path}: {e}")
+                    print(f"⚠️  无法比对 {github_path}")
         
-        print(f"✅ 文件比对完成")
+        print(f"✅ 文件比对完成\n")
     
     def generate_report(self):
-        """生成报告文件"""
-        print("📝 生成报告...")
-        
-        report_file = self.project_root / "sync_report.md"
+        """生成报告"""
+        report_file = self.project_dir / "project_sync_report.md"
         
         with open(report_file, 'w', encoding='utf-8') as f:
-            f.write("# 本地 ↔ GitHub 文件同步检查报告\n\n")
+            f.write("# projects/山脚下 目录同步检查报告\n\n")
             f.write(f"**检查时间**: {self.report['time']}\n\n")
-            f.write(f"**本地路径**: {self.report['local_root']}\n\n")
+            f.write(f"**项目路径**: {self.report['project_path']}\n\n")
+            f.write(f"**GitHub路径**: https://github.com/laobai6630-dotcom/cto/tree/main/projects/山脚下\n\n")
             
             # 总体状态
             f.write("## 📊 总体状态\n\n")
@@ -187,107 +172,77 @@ class SyncChecker:
             f.write(f"| 总文件数 | {self.report['total_files']} |\n")
             f.write(f"| 已同步 | {self.report['synced_files']} |\n")
             f.write(f"| 本地独有 | {len(self.report['missing_github'])} |\n")
-            f.write(f"| GitHub独有 | {len(self.report['missing_local'])} |\n")
             f.write(f"| 内容不同 | {len(self.report['content_diff'])} |\n\n")
             
             # 同步率
             if self.report['total_files'] > 0:
                 sync_rate = (self.report['synced_files'] / self.report['total_files']) * 100
                 status = "✅" if sync_rate == 100 else "⚠️" if sync_rate >= 90 else "❌"
-                f.write(f"**同步率**: {status} {sync_rate:.2f}%\n\n")
+                f.write(f"**同步率**: {status} {sync_rate:.1f}%\n\n")
             
-            # 本地独有文件（未上传到 GitHub）
+            # 本地独有文件
             if self.report['missing_github']:
                 f.write("## ⚠️ 本地独有文件（未上传 GitHub）\n\n")
                 for file_path in sorted(self.report['missing_github']):
-                    f.write(f"- {file_path}\n")
-                f.write("\n")
-            
-            # GitHub独有文件（本地未同步）
-            if self.report['missing_local']:
-                f.write("## ⚠️ GitHub独有文件（本地未同步）\n\n")
-                for file_path in sorted(self.report['missing_local']):
-                    f.write(f"- {file_path}\n")
+                    f.write(f"- `{file_path}`\n")
                 f.write("\n")
             
             # 内容不同的文件
             if self.report['content_diff']:
                 f.write("## 🔄 内容不同的文件\n\n")
+                f.write("**可能原因**：行尾符差异（CRLF vs LF）\n\n")
                 for diff in self.report['content_diff']:
-                    f.write(f"### {diff['file']}\n\n")
-                    f.write(f"- **本地哈希**: {diff['local_hash']}\n")
-                    f.write(f"- **GitHub哈希**: {diff['github_hash']}\n")
-                    f.write(f"- **状态**: {diff['status']}\n\n")
+                    f.write(f"- `{diff['file']}`\n")
+                f.write("\n")
+                f.write("**解决方案**：\n")
+                f.write("```bash\n")
+                f.write("cd D:\\cto\n")
+                f.write("git config core.autocrlf true\n")
+                f.write("git add --renormalize .\n")
+                f.write("git commit -m 'chore: normalize line endings'\n")
+                f.write("git push origin main\n")
+                f.write("```\n\n")
             
-            # 忽略的文件模式
-            f.write("## 🚫 忽略的文件模式\n\n")
-            for pattern in self.report['ignored_patterns']:
-                f.write(f"- {pattern}\n")
-            f.write("\n")
-            
-            # 建议
-            f.write("## 💡 建议\n\n")
-            if self.report['missing_github']:
-                f.write("1. **本地独有文件**: 决定是否需要上传到 GitHub\n")
-                f.write("   ```bash\n")
-                f.write("   git add .\n")
-                f.write("   git commit -m 'sync: add missing files'\n")
-                f.write("   git push origin main\n")
-                f.write("   ```\n\n")
-            
-            if self.report['missing_local']:
-                f.write("2. **GitHub独有文件**: 需要从 GitHub 同步到本地\n")
-                f.write("   ```bash\n")
-                f.write("   git pull origin main\n")
-                f.write("   ```\n\n")
-            
-            if self.report['content_diff']:
-                f.write("3. **内容不同的文件**: 需要手动合并或覆盖\n")
-                f.write("   ```bash\n")
-                f.write("   git status\n")
-                f.write("   git diff [filename]  # 查看具体差异\n")
-                f.write("   git checkout HEAD -- [filename]  # 使用 GitHub 版本覆盖\n")
-                f.write("   ```\n\n")
-            
+            # 总体结论
+            f.write("## 💡 总体结论\n\n")
             if (not self.report['missing_github'] and 
-                not self.report['missing_local'] and 
                 not self.report['content_diff']):
-                f.write("✅ **所有文件已同步！无需操作。**\n\n")
+                f.write("✅ **项目目录已完全同步！无需操作。**\n\n")
+            else:
+                f.write("⚠️ **发现同步问题，请参考上方的解决方案。**\n\n")
         
-        print(f"✅ 报告已生成: {report_file}")
-        print(f"\n📄 报告文件: {report_file}")
-        
-        # 同时输出到控制台
+        # 打印报告
         with open(report_file, 'r', encoding='utf-8') as f:
-            print("\n" + "="*60)
-            print(f.read())
-            print("="*60)
+            report_content = f.read()
+            print("="*70)
+            print(report_content)
+            print("="*70)
+            print(f"\n📄 完整报告已保存到: {report_file}\n")
     
     def run(self):
         """运行检查"""
-        print("\n🚀 开始检查本地 ↔ GitHub 文件同步...\n")
+        print("\n" + "="*70)
+        print("🚀 开始检查 projects/山脚下 与 GitHub 的同步状态...")
+        print("="*70 + "\n")
         
-        # 检查本地路径是否存在
-        if not self.local_root.exists():
-            print(f"❌ 错误：本地路径不存在: {self.local_root}")
+        # 检查路径
+        if not self.project_dir.exists():
+            print(f"❌ 错误：项目目录不存在: {self.project_dir}")
             sys.exit(1)
         
-        # 检查是否是 git 仓库
         if not (self.local_root / ".git").exists():
             print(f"❌ 错误：{self.local_root} 不是 Git 仓库")
             sys.exit(1)
         
         self.scan_local_files()
-        
         if not self.get_github_files():
             sys.exit(1)
-        
         self.compare_files()
         self.generate_report()
         
-        print("\n✅ 检查完成！\n")
+        print("✅ 检查完成！\n")
 
 
 if __name__ == "__main__":
-    checker = SyncChecker()
+    checker = ProjectSyncChecker()
     checker.run()
